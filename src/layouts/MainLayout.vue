@@ -4,7 +4,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>WorkControl</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-toolbar-title>{{this.$store.state.nameCurrentUser}}</v-toolbar-title>
+      <v-toolbar-title>{{currentUser.username}}</v-toolbar-title>
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" :clipped=true app overflow>
       <v-list-item @click.stop="listIncidents">
@@ -54,6 +54,7 @@
     },
     data: () => ({
       drawer: null,
+      name: '',
     }),
     methods: {
       listIncidents() {
@@ -62,6 +63,17 @@
       createIncident() {
         this.$router.push('/create-incident');
       }
+    },
+    computed: {
+      currentUser () {
+        return this.$store.getters.currentUserData
+      }
+    },
+    created() {
+      // this.$store.dispatch('retrieveCurrentUserData')
+      //   .then(response => {
+      //     this.name = response
+      //   })
     }
   }
 </script>

@@ -8,27 +8,24 @@ axios.defaults.baseURL = 'http://127.0.0.1:8000/api'
 export const store = new Vuex.Store({
   state: {
     token: localStorage.getItem('token') || null,
-    idCurrentUser: localStorage.getItem('idCurrentUser') || null,
-    nameCurrentUser: localStorage.getItem('nameCurrentUser') || null,
-    emailCurrentUser: localStorage.getItem('emailCurrentUser') || null,
+    currentUser: JSON.parse(localStorage.getItem('currentUser')) || null,
   },
   getters: {
     loggedIn(state) {
       return state.token !== null
     },
+    currentUserData(state){
+      return state.currentUser
+    },
   },
   mutations: {
-    retrieveToken(state, token, idCurrentUser, nameCurrentUser, emailCurrentUser) {
-      state.token = token
-      state.idCurrentUser = idCurrentUser
-      state.nameCurrentUser = nameCurrentUser
-      state.emailCurrentUser = emailCurrentUser
+    retrieveToken(state, data) {
+      state.token = data.token
+      state.currentUser = data.user
     },
     destroyToken(state) {
       state.token = null
-      state.idCurrentUser = null
-      state.nameCurrentUser = null
-      state.emailCurrentUser = null
+      state.currentUser = null
     },
   },
   actions: {
@@ -72,7 +69,7 @@ export const store = new Vuex.Store({
         axios.get('/users.jsonapi')
           .then(response => {
             let users = response.data.data.filter(function(item) {
-              return item.id !== '/api/users/' + context.state.idCurrentUser;
+              return item.id !== '/api/users/' + context.state.currentUser.id;
             });
             resolve(users)
           })
@@ -81,13 +78,10 @@ export const store = new Vuex.Store({
           })
       })
     },
-
     destroyToken(context) {
       if (context.getters.loggedIn) {
         localStorage.removeItem('token');
-        localStorage.removeItem('idCurrentUser');
-        localStorage.removeItem('nameCurrentUser');
-        localStorage.removeItem('emailCurrentUser');
+        localStorage.removeItem('currentUser');
         context.commit('destroyToken');
       }
     },
@@ -98,15 +92,10 @@ export const store = new Vuex.Store({
           password: credentials.password,
         })
           .then(response => {
-            const token = response.data.token;
-            const idCurrentUser = response.data.user.id;
-            const nameCurrentUser = response.data.user.username;
-            const emailCurrentUser = response.data.user.email;
-            localStorage.setItem('token', token);
-            localStorage.setItem('idCurrentUser', idCurrentUser);
-            localStorage.setItem('nameCurrentUser', nameCurrentUser);
-            localStorage.setItem('emailCurrentUser', emailCurrentUser);
-            context.commit('retrieveToken', token);
+            const data = response.data;
+            localStorage.setItem('token', response.data.token)
+            localStorage.setItem('currentUser',  JSON.stringify(response.data.user))
+            context.commit('retrieveToken', data);
             resolve(response);
           })
           .catch(error => {
