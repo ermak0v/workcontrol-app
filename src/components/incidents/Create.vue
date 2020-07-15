@@ -4,21 +4,39 @@
       Инцидент добавлен
     </v-alert>
     <v-alert v-model="alertError" dense outlined type="error">
-      Не все поля заполнены!
+      Инцидент не добавлен
     </v-alert>
-    <v-col cols="12" sm="6">
-      <v-select :items="users" item-text="attributes.username" v-model="target" return-object label="Сотрудник"></v-select>
-    </v-col>
-    <v-col cols="12" sm="6">
-      <v-select :items="criteria" item-text="attributes.name" v-model="criterion" return-object label="Критерий"></v-select>
-    </v-col>
-    <v-col cols="12" sm="6">
-      <v-text-field v-model="description" placeholder="Описание"></v-text-field>
-    </v-col>
-    <v-col cols="12" sm="6">
-      <v-text-field v-model="proof" placeholder="Доказательство"></v-text-field>
-    </v-col>
-    <v-col cols="12" md="6">
+    <v-form
+        ref="form"
+        v-model="valid"
+        lazy-validation
+    >
+      <v-select
+          v-model="target"
+          :items="users"
+          item-text="attributes.username"
+          label="Сотрудник"
+          :rules="[target.length !== 0 || 'Выберите сотрудника']"
+          return-object
+      ></v-select>
+      <v-select
+          v-model="criterion"
+          :items="criteria"
+          item-text="attributes.name"
+          label="Критерий"
+          :rules="[criterion.length !== 0 || 'Выберите критерий']"
+          return-object
+      ></v-select>
+      <v-text-field
+          v-model="description"
+          placeholder="Описание"
+          :rules="[v => !!v || 'Напишите описание']"
+      ></v-text-field>
+      <v-text-field
+          v-model="proof"
+          placeholder="Доказательство"
+          :rules="[v => !!v || 'Напишите доказательство']"
+      ></v-text-field>
       <span>Инцидент: </span>
       <v-radio-group v-model="FPositive" :mandatory="false">
         <v-radio label="Позитивный" value="true"></v-radio>
@@ -26,18 +44,23 @@
       </v-radio-group>
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click.stop="addIncident">Добавить</v-btn>
+        <v-btn
+            :disabled="!valid"
+            color="primary"
+            @click.stop="addIncident"
+        >Добавить</v-btn>
       </v-card-actions>
-    </v-col>
+    </v-form>
   </v-container>
 </template>
 
 <script>
+  import {mapGetters, mapActions} from "vuex";
+
   export default {
     name: "Create",
     data: () => ({
-      users: [],
-      criteria: [],
+      valid: true,
       description: '',
       target: [],
       criterion: [],
@@ -46,39 +69,37 @@
       alertError: false,
       alertSuccess: false
     }),
+    computed:{
+      ...mapGetters(['criteria']),
+      ...mapGetters(['users'])
+    },
     methods: {
+      ...mapActions(['retrieveCriteria']),
+      ...mapActions(['retrieveUsers']),
       addIncident(){
-        if ((this.target.length === 0) || (this.criterion.length === 0) || (this.description === '') || (this.proof === '')) {
-          this.alertError = true;
-        } else {
+        if (this.$refs.form.validate()){
           this.$store.dispatch('addIncident',{
             description: this.description,
             target: this.target.id,
             proof: this.proof,
             FPositive: (this.FPositive === 'true'),
             criterion: this.criterion.id,
-            updateAt: null,
           })
             .then(() => {
+              this.alertError = false;
               this.alertSuccess = true;
             })
             .catch(error => {
-                this.alertError = true;
-                console.log(error);
+              this.alertSuccess = false;
+              this.alertError = true;
+              console.log(error);
             })
         }
-
       }
     },
     created() {
-      this.$store.dispatch('retrieveUsers')
-        .then(response =>{
-          this.users = response;
-        })
-      this.$store.dispatch('retrieveCriteria')
-        .then(response =>{
-          this.criteria = response;
-        })
+      this.retrieveUsers();
+      this.retrieveCriteria();
     }
   }
 </script>

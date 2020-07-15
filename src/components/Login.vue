@@ -8,15 +8,21 @@
       <v-alert v-model="alertError" dense outlined type="error">
         Неверная почта или пароль
       </v-alert>
-      <v-form>
+      <v-form
+          ref="form"
+          v-model="valid"
+          lazy-validation
+      >
         <v-text-field
             v-model="email"
+            :rules="emailRules"
             label="Почта"
             prepend-icon="mdi-account"
             type="text"
         ></v-text-field>
         <v-text-field
             v-model="password"
+            :rules="[v => !!v || 'Введите пароль']"
             label="Пароль"
             prepend-icon="mdi-lock"
             type="password"
@@ -25,35 +31,47 @@
     </v-card-text>
     <v-card-actions>
       <v-spacer></v-spacer>
-      <v-btn color="primary" @click="login">Войти</v-btn>
+      <v-btn
+          color="primary"
+          @click="login"
+          :disabled="!valid"
+      >Войти</v-btn>
     </v-card-actions>
   </v-card>
 </template>
 
 <script>
+  import {mapActions} from "vuex"
+
   export default {
     name: "Login",
-
     data: () => ({
+      valid: true,
       email: "",
+      emailRules: [
+        v => !!v || 'Введите почту',
+        v => /.+@.+\..+/.test(v) || 'Почта должна быть действительная',
+      ],
       password: "",
       alertError: false,
     }),
-
     methods: {
+      ...mapActions(['retrieveToken']),
+
       login() {
-        this.$store.dispatch('retrieveToken', {
-          email: this.email,
-          password: this.password
-        })
-          .then(() => {
-            this.alertError = false;
-            this.$router.push('/');
+        if (this.$refs.form.validate()){
+          this.retrieveToken({
+            email: this.email,
+            password: this.password
           })
-          .catch(error => {
-            this.alertError = true;
-            console.log(error);
-          })
+            .then(() => {
+              this.alertError = false;
+              this.$router.push('/');
+            })
+            .catch(() => {
+              this.alertError = true;
+            })
+        }
       }
     }
   }

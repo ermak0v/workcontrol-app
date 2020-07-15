@@ -16,13 +16,10 @@
       MainLayout,
       LoginLayout
     },
-    // data: () => ({
-    //   //
-    // }),
     computed: {
       layout() {
         return (this.$route.meta.layout || 'loginLayout')
       }
     }
-  };
+  }
 </script>

@@ -27,17 +27,19 @@
 </template>
 
 <script>
+  import {mapActions} from "vuex";
+
   export default {
     name: "Logout",
     data: () => ({
         dialog: false,
     }),
     methods: {
+      ...mapActions(['destroyToken']),
       logout(){
-        this.$store.dispatch('destroyToken')
-          .then(response => {
+        this.destroyToken()
+          .then(() => {
             this.$router.push('/login');
-            console.log(response);
           })
       }
     }

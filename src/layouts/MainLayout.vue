@@ -4,7 +4,7 @@
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
       <v-toolbar-title>WorkControl</v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-toolbar-title>{{currentUser.username}}</v-toolbar-title>
+      <v-toolbar-title>{{nameCurrentUser}}</v-toolbar-title>
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" :clipped=true app overflow>
       <v-list-item @click.stop="listIncidents">
@@ -46,6 +46,7 @@
 
 <script>
   import Logout from "../components/Logout";
+  import {mapGetters} from "vuex";
 
   export default {
     name: "MainLayout",
@@ -54,27 +55,20 @@
     },
     data: () => ({
       drawer: null,
-      name: '',
     }),
     methods: {
       listIncidents() {
-        this.$router.push('/');
+        if (this.$route.name !== 'list-incident'){
+          this.$router.push('/');
+        }
       },
       createIncident() {
-        this.$router.push('/create-incident');
+        if (this.$route.name !== 'create-incident'){
+          this.$router.push('/create-incident');
+        }
       }
     },
-    computed: {
-      currentUser () {
-        return this.$store.getters.currentUserData
-      }
-    },
-    created() {
-      // this.$store.dispatch('retrieveCurrentUserData')
-      //   .then(response => {
-      //     this.name = response
-      //   })
-    }
+    computed: mapGetters(["nameCurrentUser"]),
   }
 </script>
 
