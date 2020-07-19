@@ -5,6 +5,7 @@ import router from "./router/router";
 import store from './store'
 
 Vue.config.productionTip = false;
+Vue.use(require('vue-moment'));
 
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {

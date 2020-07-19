@@ -10,8 +10,6 @@ export  default {
         return state.users.filter(function(item) {
           return item.id !== '/api/users/' + rootGetters.idCurrentUser;
         });
-      } else {
-        return null
       }
     }
   },

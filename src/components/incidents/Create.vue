@@ -69,13 +69,9 @@
       alertError: false,
       alertSuccess: false
     }),
-    computed:{
-      ...mapGetters(['criteria']),
-      ...mapGetters(['users'])
-    },
+    computed:mapGetters(['criteria', 'users']),
     methods: {
-      ...mapActions(['retrieveCriteria']),
-      ...mapActions(['retrieveUsers']),
+      ...mapActions(['retrieveCriteria', 'retrieveUsers']),
       addIncident(){
         if (this.$refs.form.validate()){
           this.$store.dispatch('addIncident',{

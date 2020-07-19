@@ -12,15 +12,11 @@ export  default {
     nameCurrentUser(state){
       if (state.currentUser !== null){
         return state.currentUser.username
-      } else {
-        return null
       }
     },
     idCurrentUser(state){
       if (state.currentUser !== null){
         return state.currentUser.id
-      } else {
-        return null
       }
     },
   },
