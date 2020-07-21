@@ -1,6 +1,6 @@
 <template>
   <v-container>
-    <v-expansion-panels>
+    <v-expansion-panels v-if="sentIncidents !== null">
       <v-expansion-panel v-for="(incident, i) in sentIncidents" :key="i">
         <v-expansion-panel-header>
           {{targetsIncidentsSent.find(target => target.id === incident.relationships.target.data.id).attributes.username}}
