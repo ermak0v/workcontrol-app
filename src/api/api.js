@@ -5,34 +5,34 @@ axios.defaults.baseURL = 'http://127.0.0.1:8000/api';
 axios.defaults.headers['Content-Type'] = 'application/vnd.api+json';
 
 export default {
+  getLogs(){
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
+    return new Promise((resolve, reject) => {
+      axios.get('/logs/update-moderate')
+        .then(response => {
+          resolve(response.data)
+        })
+        .catch(error => {
+          reject(error)
+        })
+    })
+  },
+  moderatePatchIncident(data){
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
+    return new Promise((resolve, reject) => {
+      axios.patch('/incidents/' + data.attributes._id + 'moderate', data)
+        .then(response => {
+          resolve(response)
+        })
+        .catch(error => {
+          reject(error)
+        })
+    })
+  },
   deletePatchIncident(data){
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
     return new Promise((resolve, reject) => {
-      axios.patch('/incidents/' + data.attributes._id + 'delete',{
-        data: {
-          id: data.id,
-          type: data.type,
-          attributes: {
-            description: data.attributes.description,
-            proof: data.attributes.proof,
-            FPositive: data.attributes.FPositive,
-          },
-          relationships: {
-            target: {
-              data: {
-                type: "User",
-                id: data.relationships.target.data.id
-              }
-            },
-            criterion: {
-              data: {
-                type: "Criterion",
-                id: data.relationships.criterion.data.id
-              }
-            }
-          }
-        }
-      })
+      axios.patch('/incidents/' + data.attributes._id + 'delete', data)
         .then(response => {
           resolve(response)
         })
@@ -77,10 +77,22 @@ export default {
         })
     })
   },
+  getIncidents() {
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
+    return new Promise((resolve, reject) => {
+      axios.get('/incidents/?include=target')
+        .then(response => {
+          resolve(response.data)
+        })
+        .catch(error => {
+          reject(error)
+        })
+    })
+  },
   getSentIncidents() {
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
     return new Promise((resolve, reject) => {
-      axios.get('/incidents/?filters[author]=' + auth.state.currentUser.id + '&include=target')
+      axios.get('/incidents/sent/?include=target')
         .then(response => {
           resolve(response.data)
         })
@@ -136,10 +148,22 @@ export default {
         })
     })
   },
-  getUsers() {
+  getAllUsers() {
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
     return new Promise((resolve, reject) => {
       axios.get('/users')
+        .then(response => {
+          resolve(response.data.data)
+        })
+        .catch(error => {
+          reject(error)
+        })
+    })
+  },
+  getWorkers() {
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
+    return new Promise((resolve, reject) => {
+      axios.get('/users/workers')
         .then(response => {
           resolve(response.data.data)
         })

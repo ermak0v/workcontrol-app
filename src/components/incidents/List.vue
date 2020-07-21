@@ -28,8 +28,8 @@
           </p>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn text color="error" @click="deleteIncident(incident)">Удалить</v-btn>
-            <v-btn text color="primary" @click="updateIncident(incident)">Изменить</v-btn>
+            <v-btn text color="error" :disabled="incident.attributes.FModer" @click="deleteIncident(incident)">Удалить</v-btn>
+            <v-btn text color="primary" :disabled="incident.attributes.FModer" @click="updateIncident(incident)">Изменить</v-btn>
           </v-card-actions>
         </v-expansion-panel-content>
       </v-expansion-panel>
@@ -47,7 +47,7 @@
             <v-col cols="12">
               <v-select
                   v-model="target"
-                  :items="users"
+                  :items="workers"
                   item-text="attributes.username"
                   label="Сотрудник"
                   :rules="[target.length !== 0 || 'Выберите сотрудника']"
@@ -120,9 +120,9 @@
       FPositive: 'true',
       alertError: false,
     }),
-    computed: mapGetters(['sentIncidents', 'targetsIncidentsSent', 'criteria', 'users']),
+    computed: mapGetters(['sentIncidents', 'targetsIncidentsSent', 'criteria', 'workers']),
     methods: {
-      ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveUsers']),
+      ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers']),
       deleteIncident(incident){
         this.$store.dispatch('deleteIncident', incident)
           .then(() => {
@@ -170,7 +170,7 @@
     created() {
       this.retrieveSentIncidents();
       this.retrieveCriteria();
-      this.retrieveUsers();
+      this.retrieveWorkers();
     }
   }
 </script>

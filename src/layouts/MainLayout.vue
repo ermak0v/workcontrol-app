@@ -7,6 +7,14 @@
       <v-toolbar-title>{{nameCurrentUser}}</v-toolbar-title>
     </v-app-bar>
     <v-navigation-drawer v-model="drawer" :clipped=true app overflow>
+      <v-list-item v-show="roleCurrentUser === 'ROLE_ADMIN' || roleCurrentUser === 'ROLE_HEAD'" @click.stop="moderation">
+        <v-list-item-action>
+          <v-icon>mdi-check</v-icon>
+        </v-list-item-action>
+        <v-list-item-content>
+          <v-list-item-title>Модерация</v-list-item-title>
+        </v-list-item-content>
+      </v-list-item>
       <v-list-item @click.stop="listIncidents">
         <v-list-item-action>
           <v-icon>mdi-format-list-bulleted-square</v-icon>
@@ -57,6 +65,11 @@
       drawer: null,
     }),
     methods: {
+      moderation() {
+        if (this.$route.name !== 'moderation'){
+          this.$router.push('/moderation');
+        }
+      },
       listIncidents() {
         if (this.$route.name !== 'list-incident'){
           this.$router.push('/');
@@ -68,7 +81,7 @@
         }
       }
     },
-    computed: mapGetters(["nameCurrentUser"]),
+    computed: mapGetters(["nameCurrentUser", "roleCurrentUser"]),
   }
 </script>
 

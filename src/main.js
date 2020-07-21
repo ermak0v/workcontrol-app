@@ -14,13 +14,23 @@ router.beforeEach((to, from, next) => {
         name: 'login',
       })
     } else {
-      next()
+      if (to.matched.some(record => record.meta.hidden)) {
+        if (store.getters.roleCurrentUser !== 'ROLE_ADMIN' && store.getters.roleCurrentUser !== 'ROLE_HEAD') {
+          next({
+            name: 'list-incident',
+          })
+        } else {
+          next()
+        }
+      } else {
+        next()
+      }
     }
   } else {
     if (to.matched.some(record => record.meta.requiresVisitor)) {
       if (store.getters.loggedIn) {
         next({
-          name: 'main',
+          name: 'list-incident',
         })
       } else {
         next()

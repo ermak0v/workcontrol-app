@@ -13,7 +13,7 @@
     >
       <v-select
           v-model="target"
-          :items="users"
+          :items="workers"
           item-text="attributes.username"
           label="Сотрудник"
           :rules="[target.length !== 0 || 'Выберите сотрудника']"
@@ -69,9 +69,9 @@
       alertError: false,
       alertSuccess: false
     }),
-    computed:mapGetters(['criteria', 'users']),
+    computed:mapGetters(['criteria', 'workers']),
     methods: {
-      ...mapActions(['retrieveCriteria', 'retrieveUsers']),
+      ...mapActions(['retrieveCriteria', 'retrieveWorkers']),
       addIncident(){
         if (this.$refs.form.validate()){
           this.$store.dispatch('addIncident',{
@@ -94,7 +94,7 @@
       }
     },
     created() {
-      this.retrieveUsers();
+      this.retrieveWorkers();
       this.retrieveCriteria();
     }
   }

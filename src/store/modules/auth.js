@@ -19,6 +19,11 @@ export  default {
         return state.currentUser.id
       }
     },
+    roleCurrentUser(state){
+      if (state.currentUser !== null){
+        return state.currentUser.roles
+      }
+    },
   },
   mutations: {
     retrieveToken(state, data) {

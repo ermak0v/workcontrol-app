@@ -2,29 +2,50 @@ import api from "../../api/api";
 
 export  default {
   state: {
-    users: null
+    users: null,
+    workers: null
   },
   getters: {
-    users(state, getters, rootState, rootGetters) {
-      if (state.users !== null){
-        return state.users.filter(function(item) {
+    workers(state, getters, rootState, rootGetters) {
+      if (state.workers !== null){
+        return state.workers.filter(function(item) {
           return item.id !== '/api/users/' + rootGetters.idCurrentUser;
         });
+      }
+    },
+    allUsers(state) {
+      if (state.users !== null){
+        return state.users
       }
     }
   },
   mutations: {
-    retrieveUsers(state, data) {
+    retrieveWorkers(state, data) {
+      state.workers = data
+    },
+    retrieveAllUsers(state, data) {
       state.users = data
     },
   },
   actions: {
-    retrieveUsers({ commit }) {
+    retrieveAllUsers({ commit }) {
       return new Promise((resolve, reject) => {
-        api.getUsers()
+        api.getAllUsers()
           .then(response => {
             resolve(response)
-            commit('retrieveUsers', response);
+            commit('retrieveAllUsers', response);
+          })
+          .catch(error => {
+            reject(error)
+          })
+      })
+    },
+    retrieveWorkers({ commit }) {
+      return new Promise((resolve, reject) => {
+        api.getWorkers()
+          .then(response => {
+            resolve(response)
+            commit('retrieveWorkers', response);
           })
           .catch(error => {
             reject(error)
