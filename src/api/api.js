@@ -111,6 +111,7 @@ export default {
             description: data.description,
             proof: data.proof,
             FPositive: data.FPositive,
+            FEpic: data.FEpic,
           },
           relationships: {
             target: {
