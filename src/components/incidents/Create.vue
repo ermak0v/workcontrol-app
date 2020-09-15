@@ -11,22 +11,22 @@
         v-model="valid"
         lazy-validation
     >
-      <v-select
-          v-model="target"
-          :items="workers"
-          item-text="attributes.username"
-          label="Сотрудник"
-          :rules="[target.length !== 0 || 'Выберите сотрудника']"
-          return-object
-      ></v-select>
-      <v-select
+      <v-autocomplete
+        v-model="target"
+        :items="workers"
+        item-text="attributes.username"
+        label="Сотрудник"
+        :rules="[target.length !== 0 || 'Выберите сотрудника']"
+        return-object
+      ></v-autocomplete>
+      <v-autocomplete
           v-model="criterion"
           :items="criteria"
           item-text="attributes.name"
           label="Критерий"
           :rules="[criterion.length !== 0 || 'Выберите критерий']"
           return-object
-      ></v-select>
+      ></v-autocomplete>
       <v-text-field
           v-model="description"
           placeholder="Описание"
@@ -35,13 +35,14 @@
       <v-text-field
           v-model="proof"
           placeholder="Доказательство"
-          :rules="[v => !!v || 'Напишите доказательство']"
+          :rules="urlRules"
       ></v-text-field>
       <span>Инцидент: </span>
       <v-radio-group v-model="FPositive" :mandatory="false">
         <v-radio label="Позитивный" value="true"></v-radio>
         <v-radio label="Негативный" value="false"></v-radio>
       </v-radio-group>
+      <v-checkbox v-model="FEpic" label="Важно"></v-checkbox>
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
@@ -60,12 +61,24 @@
   export default {
     name: "Create",
     data: () => ({
+      urlRules: [
+        v => !!v || 'Дайте ссылку на доказательство',
+        v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{2,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
+      ],
       valid: true,
       description: '',
       target: [],
-      criterion: [],
+      criterion: {
+        id: "/api/criteria/2",
+          type: "Criterion",
+          attributes: {
+            _id: 2,
+            name: "Выполнение планов, разовых поручений, соблюдение сроков."
+          }
+        },
       proof: '',
       FPositive: 'true',
+      FEpic: false,
       alertError: false,
       alertSuccess: false
     }),
@@ -79,6 +92,7 @@
             target: this.target.id,
             proof: this.proof,
             FPositive: (this.FPositive === 'true'),
+            FEpic: this.FEpic,
             criterion: this.criterion.id,
           })
             .then(() => {
