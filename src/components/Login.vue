@@ -14,6 +14,7 @@
           lazy-validation
       >
         <v-text-field
+            v-on:keyup.enter="login"
             v-model="email"
             :rules="emailRules"
             label="Почта"
@@ -21,6 +22,7 @@
             type="text"
         ></v-text-field>
         <v-text-field
+            v-on:keyup.enter="login"
             v-model="password"
             :rules="[v => !!v || 'Введите пароль']"
             label="Пароль"
@@ -66,7 +68,7 @@
           })
             .then(() => {
               this.alertError = false;
-              this.$router.push('/');
+              this.$router.push({name: 'create-incident'});
             })
             .catch(() => {
               this.alertError = true;
