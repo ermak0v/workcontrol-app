@@ -67,17 +67,17 @@
     methods: {
       moderation() {
         if (this.$route.name !== 'moderation'){
-          this.$router.push('/moderation');
+          this.$router.push({name: 'moderation'});
         }
       },
       listIncidents() {
         if (this.$route.name !== 'list-incident'){
-          this.$router.push('/');
+          this.$router.push({name: 'list-incident'});
         }
       },
       createIncident() {
         if (this.$route.name !== 'create-incident'){
-          this.$router.push('/create-incident');
+          this.$router.push({name: 'create-incident'});
         }
       }
     },

@@ -11,7 +11,7 @@ Vue.use(Router);
 export default new Router({
   routes: [
     {
-      path: '/',
+      path: '/list-incident',
       name: 'list-incident',
       component: ListIncident,
       meta: {
