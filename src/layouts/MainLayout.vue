@@ -36,7 +36,7 @@
     <v-main>
       <v-container fluid>
         <v-row align="stretch" justify="center">
-          <v-col cols="10">
+          <v-col cols="11">
             <v-card>
               <v-card-text>
                 <router-view/>

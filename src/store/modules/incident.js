@@ -50,6 +50,7 @@ export  default {
           entry.attributes.description = data.description
           entry.attributes.proof = data.proof
           entry.attributes.FPositive = data.FPositive
+          entry.attributes.FEpic = data.FEpic
           entry.relationships.target.data.id = data.target
           entry.relationships.criterion.data.id = data.criterion
         }

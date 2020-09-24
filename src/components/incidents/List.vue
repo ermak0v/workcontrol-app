@@ -1,170 +1,255 @@
 <template>
   <v-container>
-    <v-expansion-panels v-if="sentIncidents !== null">
-      <v-expansion-panel v-for="(incident, i) in sentIncidents" :key="i">
-        <v-expansion-panel-header>
-          {{targetsIncidentsSent.find(target => target.id === incident.relationships.target.data.id).attributes.username}}
-          <v-spacer></v-spacer>
-          {{incident.attributes.createdAt | moment("HH:mm DD.MM.YYYY")}}
-        </v-expansion-panel-header>
-        <v-expansion-panel-content>
-          <p>
-            Критерий:<br>
-            {{criteria.find(criterion => criterion.id === incident.relationships.criterion.data.id).attributes.name}}
-          </p>
-          <p>
-            Описание:<br>
-            {{incident.attributes.description}}
-          </p>
-          <p>
-            Доказательство:<br>
-            {{incident.attributes.proof}}
-          </p>
-          <p  v-show="incident.attributes.FPositive">
-            Инцидент: позитивный
-          </p>
-          <p  v-show="!incident.attributes.FPositive">
-            Инцидент: негативный
-          </p>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn text color="error" :disabled="incident.attributes.FModer" @click="deleteIncident(incident)">Удалить</v-btn>
-            <v-btn text color="primary" :disabled="incident.attributes.FModer" @click="updateIncident(incident)">Изменить</v-btn>
-          </v-card-actions>
-        </v-expansion-panel-content>
-      </v-expansion-panel>
-    </v-expansion-panels>
-    <v-dialog v-model="dialog" width="800px">
-      <v-card>
-        <v-card-title class="grey darken-2">
-          Изменить инцидент
-        </v-card-title>
-          <v-alert v-model="alertError" dense outlined type="error">
-            Инцидент не добавлен
-          </v-alert>
-          <v-form ref="form">
-            <v-row class="mx-2">
-            <v-col cols="12">
-              <v-select
-                  v-model="target"
-                  :items="workers"
-                  item-text="attributes.username"
-                  label="Сотрудник"
-                  :rules="[target.length !== 0 || 'Выберите сотрудника']"
-                  return-object
-              ></v-select>
-            </v-col>
-            <v-col cols="12">
-              <v-select
-                  v-model="criterion"
-                  :items="criteria"
-                  item-text="attributes.name"
-                  label="Критерий"
-                  :rules="[criterion.length !== 0 || 'Выберите критерий']"
-                  return-object
-              ></v-select>
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                  v-model="description"
-                  placeholder="Описание"
-                  :rules="[v => !!v || 'Напишите описание']"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                  v-model="proof"
-                  placeholder="Доказательство"
-                  :rules="[v => !!v || 'Напишите доказательство']"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12">
-              <span>Инцидент: </span>
-              <v-radio-group v-model="FPositive" :mandatory="false">
-                <v-radio label="Позитивный" value="true"></v-radio>
-                <v-radio label="Негативный" value="false"></v-radio>
-              </v-radio-group>
-            </v-col>
-            </v-row>
-          </v-form>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-              text
-              color="primary"
-              @click="dialog = false"
-          >Отмена</v-btn>
-          <v-btn
-              text
-              @click="saveIncident()"
-          >Сохранить</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <v-card>
+      <v-card-title>
+        <tr>
+          Инциденты
+          <td>
+            <v-select
+                v-model="valueEpic"
+                :items="filter"
+                label="Важность"
+            ></v-select>
+          </td>
+          <td>
+            <v-select
+                v-model="valueModer"
+                :items="filter"
+                label="Модерация"
+            ></v-select>
+          </td>
+          <td>
+            <v-autocomplete
+                v-model="valueTarget"
+                :items="workers"
+                item-text="attributes.username"
+                label="Сотрудник"
+                return-object
+            ></v-autocomplete>
+          </td>
+          <td>
+            <v-autocomplete
+                v-model="valueCriterion"
+                :items="criteria"
+                item-text="attributes.name"
+                label="Критерий"
+                return-object
+            ></v-autocomplete>
+          </td>
+          <td colspan="2"></td>
+          <td>
+            <v-select
+                v-model="valueType"
+                :items="filterType"
+                label="Тип"
+            ></v-select>
+          </td>
+          <td colspan="2"></td>
+        </tr>
+      </v-card-title>
+      <v-data-table
+          :headers="headers"
+          :items="sentIncidents"
+          :page.sync="page"
+          :items-per-page="itemsPerPage"
+          :loading="loading"
+          hide-default-footer
+          class="elevation-1"
+          @page-count="pageCount = $event"
+      >
+        <template v-slot:item.attributes.FEpic="{ item }">
+          <div v-if="item.attributes.FEpic">
+            <v-icon color="error">mdi-alert-octagon</v-icon>
+          </div>
+          <div v-else>
+            <v-icon>mdi-alert-octagon</v-icon>
+          </div>
+        </template>
+
+        <template v-slot:item.attributes.FModer="{ item }">
+          <div v-if="item.attributes.FModer">Есть</div>
+          <div v-else>Нет</div>
+        </template>
+
+        <template v-slot:item.relationships.target.data.id="{ item }">
+          {{targetsIncidentsSent.find(target => target.id === item.relationships.target.data.id).attributes.username}}
+        </template>
+
+        <template v-slot:item.relationships.criterion.data.id="{ item }">
+          {{criteria.find(criterion => criterion.id === item.relationships.criterion.data.id).attributes.name}}
+        </template>
+
+        <template v-slot:item.attributes.description="{ item }">
+          <div v-if="item.attributes.description.length < 20">
+            {{item.attributes.description}}
+          </div>
+          <div v-else>
+            <v-btn icon color="indigo" @click="openUpdateDescription(item)">
+              <v-icon>mdi-table-of-contents</v-icon>
+            </v-btn>
+          </div>
+        </template>
+
+        <template v-slot:item.attributes.proof="{ item }">
+          <v-btn icon color="primary" @click="clickUrl(item.attributes.proof)">
+            <v-icon>mdi-link-variant</v-icon>
+          </v-btn>
+        </template>
+
+        <template v-slot:item.attributes.FPositive="{ item }">
+          <div v-if="item.attributes.FPositive">Позитивный</div>
+          <div v-else>Негативный</div>
+        </template>
+
+        <template v-slot:item.attributes.createdAt="{ item }">
+          {{item.attributes.createdAt | moment("HH:mm DD.MM.YYYY")}}
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+          <v-btn icon color="primary" @click="openUpdateDialog(item)">
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
+          <v-btn icon color="error" @click="openDeleteDialog(item)">
+            <v-icon>mdi-delete</v-icon>
+          </v-btn>
+        </template>
+
+      </v-data-table>
+      <div class="text-center pt-2">
+        <v-pagination v-model="page" :length="pageCount"></v-pagination>
+        <v-text-field
+            class="text-right mx-4"
+            style="max-width: 150px"
+            :value="itemsPerPage"
+            label="Элементов на странице"
+            type="number"
+            min="-1"
+            max="15"
+            @input="itemsPerPage = parseInt($event, 10)"
+        ></v-text-field>
+      </div>
+    </v-card>
+    <description-incident
+        ref="refDialogDescription"
+        :dialog="dialogDescription"
+        @closeDialog="closeDialog">
+    </description-incident>
+    <delete-incident
+        ref="refDialogDelete"
+        :dialog="dialogDelete"
+        @closeDialog="closeDialog">
+    </delete-incident>
+    <update-incident
+        ref="refDialogUpdate"
+        :dialog="dialogUpdate"
+        @closeDialog="closeDialog">
+    </update-incident>
   </v-container>
 </template>
 
 <script>
   import {mapGetters, mapActions} from "vuex";
+  import updateIncident from "./dialog/Update";
+  import deleteIncident from "./dialog/Delete";
+  import descriptionIncident from "./dialog/Description";
 
   export default {
     name: "List",
+    components: {
+      updateIncident,
+      deleteIncident,
+      descriptionIncident
+    },
     data: () =>({
-      idIncident: '',
-      _idIncident: '',
-      dialog: false,
-      description: '',
-      target: [],
-      criterion: [],
-      proof: '',
-      FPositive: 'true',
-      alertError: false,
+      loading: false,
+      dialogDelete: false,
+      dialogDescription: false,
+      dialogUpdate: false,
+      page: 1,
+      pageCount: 0,
+      itemsPerPage: 10,
+      valueEpic: 'все',
+      filter: ['да', 'нет', 'все'],
+      valueModer: 'все',
+      filterType: ['позитивный', 'негативный', 'все'],
+      valueType: 'все',
+      valueTarget: '',
+      valueCriterion: '',
     }),
-    computed: mapGetters(['sentIncidents', 'targetsIncidentsSent', 'criteria', 'workers']),
+    computed: {
+      ...mapGetters(['sentIncidents', 'targetsIncidentsSent', 'criteria', 'workers']),
+      headers () {
+        return [
+          { text: 'Важность',
+            value: 'attributes.FEpic',
+            filter: value => {
+              if (this.valueEpic === 'все') return true
+              if (this.valueEpic === 'да') return value === true
+              if (this.valueEpic === 'нет') return value === false
+            },
+            align: 'center'
+          },
+          { text: 'Модерация',
+            value: 'attributes.FModer',
+            filter: value => {
+              if (this.valueModer === 'все') return true
+              if (this.valueModer === 'да') return value === true
+              if (this.valueModer === 'нет') return value === false
+            },
+            align: 'center'
+          },
+          { text: 'Получатель',
+            value: 'relationships.target.data.id',
+            filter: value => {
+              if (!this.valueTarget) return true
+              return value === this.valueTarget.id
+            },
+            align: 'center'
+          },
+          { text: 'Критерий',
+            value: 'relationships.criterion.data.id',
+            filter: value => {
+              if (!this.valueCriterion) return true
+              return value === this.valueCriterion.id
+            },
+            align: 'center'
+          },
+          { text: 'Описание', value: 'attributes.description', align: 'center', sortable: false },
+          { text: 'Доказательство', value: 'attributes.proof', align: 'center', sortable: false },
+          { text: 'Тип',
+            value: 'attributes.FPositive',
+            filter: value => {
+              if (this.valueType === 'все') return true
+              if (this.valueType === 'позитивный') return value === true
+              if (this.valueType === 'негативный') return value === false
+            },
+            align: 'center' },
+          { text: 'Создан', value: 'attributes.createdAt', align: 'center' },
+          { text: 'Действия', value: 'actions', align: 'center', sortable: false },
+        ]
+      },
+    },
     methods: {
       ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers']),
-      deleteIncident(incident){
-        this.$store.dispatch('deleteIncident', incident)
-          .then(() => {
-          })
-          .catch(error => {
-            console.log(error);
-          })
+      openUpdateDescription(incident){
+        this.dialogDescription = true;
+        this.$refs.refDialogDescription.createDialog(incident);
       },
-      updateIncident(incident){
-        this.dialog = true;
-        this.description = incident.attributes.description;
-        this.proof = incident.attributes.proof;
-        if (incident.attributes.FPositive){
-          this.FPositive = 'true'
-        } else {
-          this.FPositive = 'false'
-        }
-        this.target = this.targetsIncidentsSent.find(target => target.id === incident.relationships.target.data.id)
-        this.criterion = this.criteria.find(criterion => criterion.id === incident.relationships.criterion.data.id)
-        this.idIncident = incident.id;
-        this._idIncident = incident.attributes._id;
+      openDeleteDialog(incident){
+        this.dialogDelete = true;
+        this.$refs.refDialogDelete.createDialog(incident);
       },
-      saveIncident(){
-        if (this.$refs.form.validate()){
-          this.$store.dispatch('updateIncident',{
-            id: this.idIncident,
-            _id: this._idIncident,
-            description: this.description,
-            target: this.target.id,
-            proof: this.proof,
-            FPositive: (this.FPositive === 'true'),
-            criterion: this.criterion.id,
-          })
-            .then(() => {
-              this.alertError = false;
-              this.dialog = false;
-            })
-            .catch(error => {
-              this.alertError = true;
-              console.log(error);
-            })
-        }
+      openUpdateDialog(incident){
+        this.dialogUpdate = true;
+        this.$refs.refDialogUpdate.createDialog(incident);
+      },
+      closeDialog() {
+        this.dialogDescription = false;
+        this.dialogDelete = false;
+        this.dialogUpdate = false;
+      },
+      clickUrl(url) {
+        window.open(url);
       }
     },
     created() {

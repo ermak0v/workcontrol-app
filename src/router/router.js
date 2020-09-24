@@ -9,6 +9,7 @@ import Moderation from "../components/incidents/Moderation";
 Vue.use(Router);
 
 export default new Router({
+  mode: 'history',
   routes: [
     {
       path: '/list-incident',

@@ -10,15 +10,11 @@ Vue.use(require('vue-moment'));
 router.beforeEach((to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!store.getters.loggedIn) {
-      next({
-        name: 'login',
-      })
+      next({name: 'login'})
     } else {
       if (to.matched.some(record => record.meta.hidden)) {
         if (store.getters.roleCurrentUser !== 'ROLE_ADMIN' && store.getters.roleCurrentUser !== 'ROLE_HEAD') {
-          next({
-            name: 'create-incident',
-          })
+          next({name: 'create-incident'})
         } else {
           next()
         }
@@ -29,14 +25,16 @@ router.beforeEach((to, from, next) => {
   } else {
     if (to.matched.some(record => record.meta.requiresVisitor)) {
       if (store.getters.loggedIn) {
-        next({
-          name: 'create-incident',
-        })
+        next({name: 'create-incident'})
       } else {
         next()
       }
     } else {
-      next()
+      if (undefined === router.options.routes.find(item => item.name === to.name)) {
+        next({name: 'create-incident'})
+      } else {
+        next()
+      }
     }
   }
 })
