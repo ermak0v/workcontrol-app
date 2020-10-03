@@ -11,6 +11,11 @@ export  default {
         return state.sentIncidents.included
       }
     },
+    lastTargets(state) {
+      if (state.sentIncidents !== null && 'included' in state.sentIncidents){
+          return state.sentIncidents.included.slice(0, 10)
+      }
+    },
     sentIncidents(state) {
       if (state.sentIncidents !== null){
         return state.sentIncidents.data.filter(incident => incident.attributes.FDelete === false)

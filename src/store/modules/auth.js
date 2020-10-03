@@ -24,6 +24,11 @@ export  default {
         return state.currentUser.roles
       }
     },
+    departmentCurrentUser(state){
+      if (state.currentUser !== null){
+        return state.currentUser.department
+      }
+    },
   },
   mutations: {
     retrieveToken(state, data) {

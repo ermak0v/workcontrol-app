@@ -19,6 +19,25 @@
         :rules="[target.length !== 0 || 'Выберите сотрудника']"
         return-object
       ></v-autocomplete>
+
+      <div v-show="lastTargets">
+        Последние сотрудники кому отправляли инциденты:
+        <v-slide-group show-arrows>
+          <v-slide-item
+              v-for="item in lastTargets"
+              :key="item.id"
+          >
+            <v-btn
+                class="mx-2"
+                small
+                @click="slideLastTargets(item)"
+            >
+              {{item.attributes.username}}
+            </v-btn>
+          </v-slide-item>
+        </v-slide-group>
+      </div>
+
       <v-autocomplete
           v-model="criterion"
           :items="criteria"
@@ -27,6 +46,20 @@
           :rules="[criterion.length !== 0 || 'Выберите критерий']"
           return-object
       ></v-autocomplete>
+      <v-slide-group show-arrows>
+        <v-slide-item
+            v-for="item in criteria"
+            :key="item.id"
+        >
+          <v-btn
+              class="mx-2"
+              small
+              @click="slideCriteria(item)"
+          >
+            {{item.attributes.smallName}}
+          </v-btn>
+        </v-slide-item>
+      </v-slide-group>
       <v-text-field
           v-model="description"
           placeholder="Описание"
@@ -63,28 +96,34 @@
     data: () => ({
       urlRules: [
         v => !!v || 'Дайте ссылку на доказательство',
-        v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{2,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
+        v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{1,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
       ],
       valid: true,
       description: '',
       target: [],
       criterion: {
         id: "/api/criteria/2",
-          type: "Criterion",
-          attributes: {
-            _id: 2,
-            name: "Выполнение планов, разовых поручений, соблюдение сроков."
-          }
-        },
+        type: "Criterion",
+        attributes: {
+          _id: 2,
+          name: "Выполнение планов, разовых поручений, соблюдение сроков."
+        }
+      },
       proof: '',
       FPositive: 'true',
       FEpic: false,
       alertError: false,
       alertSuccess: false
     }),
-    computed:mapGetters(['criteria', 'workers']),
+    computed:mapGetters(['lastTargets', 'criteria', 'workers', 'roleCurrentUser', 'departmentCurrentUser']),
     methods: {
-      ...mapActions(['retrieveCriteria', 'retrieveWorkers']),
+      ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers']),
+      slideLastTargets(item){
+        this.target = item
+      },
+      slideCriteria(item){
+        this.criterion = item
+      },
       addIncident(){
         if (this.$refs.form.validate()){
           this.$store.dispatch('addIncident',{
@@ -94,6 +133,7 @@
             FPositive: (this.FPositive === 'true'),
             FEpic: this.FEpic,
             criterion: this.criterion.id,
+            FModer: ((this.roleCurrentUser === 'ROLE_ADMIN') || (this.target.relationships.department.data.id === '/api/departments/' + this.departmentCurrentUser && this.roleCurrentUser === 'ROLE_HEAD'))
           })
             .then(() => {
               this.alertError = false;
@@ -108,6 +148,7 @@
       }
     },
     created() {
+      this.retrieveSentIncidents();
       this.retrieveWorkers();
       this.retrieveCriteria();
     }

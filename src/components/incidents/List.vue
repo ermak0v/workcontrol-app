@@ -76,7 +76,7 @@
         </template>
 
         <template v-slot:item.relationships.criterion.data.id="{ item }">
-          {{criteria.find(criterion => criterion.id === item.relationships.criterion.data.id).attributes.name}}
+          {{criteria.find(criterion => criterion.id === item.relationships.criterion.data.id).attributes.smallName}}
         </template>
 
         <template v-slot:item.attributes.description="{ item }">

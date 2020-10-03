@@ -113,6 +113,7 @@ export default {
             proof: data.proof,
             FPositive: data.FPositive,
             FEpic: data.FEpic,
+            FModer: data.FModer,
           },
           relationships: {
             target: {

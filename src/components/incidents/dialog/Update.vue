@@ -28,6 +28,20 @@
                 :rules="[criterion.length !== 0 || 'Выберите критерий']"
                 return-object
             ></v-autocomplete>
+            <v-slide-group show-arrows>
+              <v-slide-item
+                  v-for="item in criteria"
+                  :key="item.id"
+              >
+                <v-btn
+                    class="mx-2"
+                    small
+                    @click="slideCriteria(item)"
+                >
+                  {{item.attributes.smallName}}
+                </v-btn>
+              </v-slide-item>
+            </v-slide-group>
           </v-col>
           <v-col cols="12">
             <v-text-field
@@ -94,6 +108,9 @@
     }),
     computed: mapGetters(['targetsIncidentsSent', 'criteria', 'workers']),
     methods: {
+      slideCriteria(item){
+        this.criterion = item
+      },
       cancelDialog() {
         this.$emit("closeDialog")
       },
