@@ -6,7 +6,9 @@ export  default {
   },
   getters: {
     logs(state){
-      return state.logs
+      if (state.logs !== null){
+        return state.logs
+      }
     }
   },
   mutations: {

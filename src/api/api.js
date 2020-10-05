@@ -17,6 +17,18 @@ export default {
         })
     })
   },
+  noModeratePatchIncident(data){
+    axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
+    return new Promise((resolve, reject) => {
+      axios.patch('/incidents/' + data.attributes._id + 'no-moderate', data)
+        .then(response => {
+          resolve(response)
+        })
+        .catch(error => {
+          reject(error)
+        })
+    })
+  },
   moderatePatchIncident(data){
     axios.defaults.headers.common['Authorization'] = 'Bearer ' + auth.state.token;
     return new Promise((resolve, reject) => {
@@ -53,6 +65,7 @@ export default {
             proof: data.proof,
             FPositive: data.FPositive,
             FEpic: data.FEpic,
+            FModer: data.FModer,
           },
           relationships: {
             target: {

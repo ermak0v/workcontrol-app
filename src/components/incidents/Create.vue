@@ -126,6 +126,10 @@
       },
       addIncident(){
         if (this.$refs.form.validate()){
+          let FModer;
+          if ((this.roleCurrentUser === 'ROLE_ADMIN') || (this.target.relationships.department.data.id === '/api/departments/' + this.departmentCurrentUser && this.roleCurrentUser === 'ROLE_HEAD')){
+            FModer = true;
+          }
           this.$store.dispatch('addIncident',{
             description: this.description,
             target: this.target.id,
@@ -133,7 +137,7 @@
             FPositive: (this.FPositive === 'true'),
             FEpic: this.FEpic,
             criterion: this.criterion.id,
-            FModer: ((this.roleCurrentUser === 'ROLE_ADMIN') || (this.target.relationships.department.data.id === '/api/departments/' + this.departmentCurrentUser && this.roleCurrentUser === 'ROLE_HEAD'))
+            FModer: FModer,
           })
             .then(() => {
               this.alertError = false;

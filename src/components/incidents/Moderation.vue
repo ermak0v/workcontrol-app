@@ -1,153 +1,328 @@
 <template>
   <v-container>
-    <template>
-      <v-card>
-        <v-card-title>
-          Инциденты
-          <v-spacer></v-spacer>
-          <v-text-field
-              v-model="search"
-              append-icon="mdi-magnify"
-              label="Поиск"
-              single-line
-              hide-details
-          ></v-text-field>
-        </v-card-title>
-        <v-data-table
-            :headers="headers"
-            :items="allIncidents"
-            :search="search"
-            item-key="name"
-            class="elevation-1"
-        >
-          <template v-slot:item.moderate = {item}>
-            <v-btn icon color="green" :disabled="item.attributes.FModer || item.attributes.FDelete" @click.stop="moderateIncident(item)">
-              <v-icon>mdi-thumb-up</v-icon>
-            </v-btn>
-          </template>
-          <template v-slot:item.modere = {item}>
-            <v-simple-checkbox v-model="item.attributes.FModer" disabled></v-simple-checkbox>
-          </template>
-          <template v-slot:item.target = {item}>
-            {{allUsers.find(target => target.id === item.relationships.target.data.id).attributes.username}}
-          </template>
-          <template v-slot:item.positive = {item}>
-            <div v-show="item.attributes.FPositive">Позитивный</div>
-            <div v-show="!item.attributes.FPositive">Негативный</div>
-          </template>
-          <template v-slot:item.create = {item}>
+    <v-card>
+      <v-card-title>
+        <v-row>
+          <v-col>
+            Модерация инцидентов
+            <v-row>
+              <v-col>
+                <v-select
+                    v-model="valueEpic"
+                    :items="filter"
+                    label="Важность"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-select
+                    v-model="valueModer"
+                    :items="filter"
+                    label="Модерация"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-autocomplete
+                    v-model="valueAuthor"
+                    :items="allUsers"
+                    item-text="attributes.username"
+                    label="Отправитель"
+                    return-object
+                ></v-autocomplete>
+              </v-col>
+              <v-col>
+                <v-autocomplete
+                    v-model="valueTarget"
+                    :items="workers"
+                    item-text="attributes.username"
+                    label="Получатель"
+                    return-object
+                ></v-autocomplete>
+              </v-col>
+              <v-col>
+                <v-autocomplete
+                    v-model="valueCriterion"
+                    :items="criteria"
+                    item-text="attributes.name"
+                    label="Критерий"
+                    return-object
+                ></v-autocomplete>
+              </v-col>
+              <v-col>
+                <v-select
+                    v-model="valueType"
+                    :items="filterType"
+                    label="Тип"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-menu
+                    ref="menu"
+                    v-model="menu"
+                    :close-on-content-click="false"
+                    :return-value.sync="dates"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                        v-model="dates"
+                        label="Дата"
+                        readonly
+                        v-bind="attrs"
+                        v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                      v-model="dates"
+                      no-title
+                      range
+                  >
+                    <v-spacer></v-spacer>
+                    <v-btn text color="primary" @click="menu = false">
+                      Отмена
+                    </v-btn>
+                    <v-btn text color="primary" @click="$refs.menu.save(dates = [])">
+                      Отчистить
+                    </v-btn>
+                    <v-btn text color="primary" @click="$refs.menu.save(dates)">
+                      Ок
+                    </v-btn>
+                  </v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
+      </v-card-title>
+      <v-data-table
+          :headers="headers"
+          :items="allIncidents"
+          :page.sync="page"
+          :items-per-page="itemsPerPage"
+          :loading="loading"
+          hide-default-footer
+          class="elevation-1"
+          @page-count="pageCount = $event"
+      >
+        <template v-slot:item.attributes.FEpic="{ item }">
+          <div v-if="item.attributes.FEpic">
+            <v-icon color="error">mdi-alert-octagon</v-icon>
+          </div>
+          <div v-else>
+            <v-icon>mdi-alert-octagon</v-icon>
+          </div>
+        </template>
 
-            {{item.attributes.createdAt | moment("HH:mm DD.MM.YYYY")}}
-          </template>
-          <template v-slot:item.actions = {item}>
-            <v-btn outlined small color="primary" @click.stop = "additionalInfo(item)">Просмотр</v-btn>
-          </template>
-        </v-data-table>
-      </v-card>
-    </template>
-    <v-dialog v-model="dialog" width="1000">
-      <v-card>
-        <v-card-title class="headline grey lighten-2">
-          Информация по инциденту
-        </v-card-title>
-
-        <v-container fluid>
-          <v-row justify="center" >
-            <v-col cols="12">
-              <v-card>
-                <v-list-item three-line>
-                  <v-list-item-content>
-                    <div class="overline mb-4">Текущие состоянние</div>
-                    <v-list-item-title>
-                      <div v-if="create !== ''">
-                        Создан: {{create | moment("HH:mm DD.MM.YYYY")}}
-                      </div>
-                      <v-spacer></v-spacer>
-                      Отправитель: {{author}}
-                      <v-spacer></v-spacer>
-                      Получатель: {{target}}
-                      <v-spacer></v-spacer>
-                      <p>Критерий: {{criterion}}</p>
-                      <p>Описание: {{description}}</p>
-                      <p>Доказательство: {{proof}}</p>
-                      Удалялся: {{this.delete}} Одобрен: {{moder}} Обновлялся: {{update}}
-                    </v-list-item-title>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <v-row justify="center" v-for="(log, i) in logs" :key="i">
-            <v-col cols="12">
-              <v-card>
-                <v-list-item three-line>
-                  <v-list-item-content>
-                    <div class="overline mb-4" v-if="log.attributes.action === 'update'">Обновлено {{allUsers.find(creator => creator.id === log.relationships.creator.data.id).attributes.username}}</div>
-                    <div class="overline mb-4" v-if="log.attributes.action === 'delete'">Удалено {{allUsers.find(creator => creator.id === log.relationships.creator.data.id).attributes.username}}</div>
-                    <div class="overline mb-4" v-if="log.attributes.action === 'moderate'">Одобрено {{allUsers.find(creator => creator.id === log.relationships.creator.data.id).attributes.username}}</div>
-                    <div class="overline mb-4" v-if="log.attributes.action === 'create'">Создано {{allUsers.find(creator => creator.id === log.relationships.creator.data.id).attributes.username}}</div>
-                    <v-list-item-title>
-                      <div>Время: {{log.attributes.createdAt | moment("HH:mm DD.MM.YYYY")}}</div>
-                      <v-spacer></v-spacer>
-                      Получатель: {{allUsers.find(target => target.id === log.relationships.target.data.id).attributes.username}}
-                      <v-spacer></v-spacer>
-                      <p>Критерий: {{criteria.find(criterion => criterion.id === log.relationships.criterion.data.id).attributes.name}}</p>
-                      <p>Описание: {{log.attributes.description}}</p>
-                      <p>Доказательство: {{log.attributes.proof}}</p>
-                    </v-list-item-title>
-                  </v-list-item-content>
-                </v-list-item>
-              </v-card>
-            </v-col>
-          </v-row>
-
-        </v-container>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="dialog = false">
-            Закрыть
+        <template v-slot:item.attributes.FModer="{ item }">
+          <v-btn icon color="green" v-show="item.attributes.FModer === null || item.attributes.FDelete" @click.once="moderateIncident(item)">
+            <v-icon>mdi-thumb-up</v-icon>
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          <v-btn icon color="red" v-show="item.attributes.FModer === null || item.attributes.FDelete" @click.once="noModerateIncident(item)">
+            <v-icon>mdi-thumb-down</v-icon>
+          </v-btn>
+          <div v-show="item.attributes.FModer !== null || item.attributes.FDelete">
+            <div v-if="item.attributes.FModer">Есть</div>
+            <div v-else>Отклонено</div>
+          </div>
+        </template>
+
+        <template v-slot:item.relationships.author.data.id="{ item }">
+          {{allUsers.find(author => author.id === item.relationships.author.data.id).attributes.username}}
+        </template>
+
+        <template v-slot:item.relationships.target.data.id="{ item }">
+          {{workers.find(target => target.id === item.relationships.target.data.id).attributes.username}}
+        </template>
+
+        <template v-slot:item.relationships.criterion.data.id="{ item }">
+          {{criteria.find(criterion => criterion.id === item.relationships.criterion.data.id).attributes.smallName}}
+        </template>
+
+        <template v-slot:item.attributes.description="{ item }">
+          <div v-if="item.attributes.description.length < 20">
+            {{item.attributes.description}}
+          </div>
+          <div v-else>
+            <v-btn icon color="indigo" @click="openUpdateDescription(item)">
+              <v-icon>mdi-table-of-contents</v-icon>
+            </v-btn>
+          </div>
+        </template>
+
+        <template v-slot:item.attributes.proof="{ item }">
+          <v-btn icon color="primary" @click="clickUrl(item.attributes.proof)">
+            <v-icon>mdi-link-variant</v-icon>
+          </v-btn>
+        </template>
+
+        <template v-slot:item.attributes.FPositive="{ item }">
+          <div v-if="item.attributes.FPositive">Позитивный</div>
+          <div v-else>Негативный</div>
+        </template>
+
+        <template v-slot:item.attributes.createdAt="{ item }">
+          {{item.attributes.createdAt | moment("HH:mm DD.MM.YYYY")}}
+        </template>
+
+        <template v-slot:item.actions="{ item }">
+          <v-btn icon color="primary" :disabled="item.attributes.FModer !== null || item.attributes.FDelete" @click="openUpdateDialog(item)">
+            <v-icon>mdi-pencil</v-icon>
+          </v-btn>
+          <v-btn icon color="teal accent-3" @click="openLogsDialog(item)">
+            <v-icon>mdi-information</v-icon>
+          </v-btn>
+        </template>
+
+      </v-data-table>
+      <div class="text-center pt-2">
+        <v-pagination v-model="page" :length="pageCount"></v-pagination>
+        <v-text-field
+            class="text-right mx-4"
+            style="max-width: 150px"
+            :value="itemsPerPage"
+            label="Элементов на странице"
+            type="number"
+            min="-1"
+            max="15"
+            @input="itemsPerPage = parseInt($event, 10)"
+        ></v-text-field>
+      </div>
+    </v-card>
+    <logs-incident
+        ref="refDialogLogs"
+        :dialog="dialogLogs"
+        @closeDialog="closeDialog">
+    </logs-incident>
+    <description-incident
+        ref="refDialogDescription"
+        :dialog="dialogDescription"
+        @closeDialog="closeDialog">
+    </description-incident>
+    <update-incident
+        ref="refDialogUpdate"
+        :dialog="dialogUpdate"
+        @closeDialog="closeDialog">
+    </update-incident>
   </v-container>
 </template>
 
 <script>
   import {mapGetters, mapActions} from "vuex";
+  import updateIncident from "./dialog/Update";
+  import descriptionIncident from "./dialog/Description";
+  import logsIncident from "./dialog/Logs";
+  import moment from "moment";
 
   export default {
-    name: "Moderation",
-    data () {
-      return {
-        dialog: false,
-        search: '',
-        author: [],
-        target: [],
-        criterion: [],
-        description: '',
-        proof: '',
-        FPositive: 'true',
-        create: '',
-        delete: '',
-        moder: '',
-        update: '',
-        headers: [
-          { text: 'Одобрить', value: 'moderate', sortable: false},
-          { text: 'Одобрено', value: 'modere' },
-          { text: 'Получатель', value: 'target' },
-          { text: 'Описание', align: 'start', sortable: false, value: 'attributes.description' },
-          { text: 'Оценка', value: 'positive' },
-          { text: 'Создан', value: 'create' },
-          { text: 'Доп. инф.', value: 'actions', sortable: false },
-        ],
-      }
+    name: "List",
+    components: {
+      updateIncident,
+      descriptionIncident,
+      logsIncident
     },
-    computed: mapGetters(['allIncidents', 'allUsers', 'criteria', 'logs']),
+    data: () =>({
+      dates: [],
+      menu: false,
+      modal: false,
+      loading: false,
+      dialogLogs: false,
+      dialogDelete: false,
+      dialogDescription: false,
+      dialogUpdate: false,
+      page: 1,
+      pageCount: 0,
+      itemsPerPage: 10,
+      valueEpic: 'все',
+      filter: ['да', 'нет', 'все'],
+      valueModer: 'все',
+      filterType: ['позитивный', 'негативный', 'все'],
+      valueType: 'все',
+      valueAuthor: '',
+      valueTarget: '',
+      valueCriterion: '',
+    }),
+    computed: {
+      ...mapGetters(['allIncidents', 'allUsers', 'logs', 'targetsIncidentsSent', 'criteria', 'workers']),
+      headers () {
+        return [
+          { text: 'Важность',
+            value: 'attributes.FEpic',
+            filter: value => {
+              if (this.valueEpic === 'все') return true
+              if (this.valueEpic === 'да') return value === true
+              if (this.valueEpic === 'нет') return value === false
+            },
+            align: 'center'
+          },
+          { text: 'Модерация',
+            value: 'attributes.FModer',
+            filter: value => {
+              if (this.valueModer === 'все') return true
+              if (this.valueModer === 'да') return value === true
+              if (this.valueModer === 'нет') return value === false
+            },
+            align: 'center'
+          },
+          { text: 'Отправитель',
+            value: 'relationships.author.data.id',
+            filter: value => {
+              if (!this.valueAuthor) return true
+              return value === this.valueAuthor.id
+            },
+            align: 'center'
+          },
+          { text: 'Получатель',
+            value: 'relationships.target.data.id',
+            filter: value => {
+              if (!this.valueTarget) return true
+              return value === this.valueTarget.id
+            },
+            align: 'center'
+          },
+          { text: 'Критерий',
+            value: 'relationships.criterion.data.id',
+            filter: value => {
+              if (!this.valueCriterion) return true
+              return value === this.valueCriterion.id
+            },
+            align: 'center'
+          },
+          { text: 'Описание', value: 'attributes.description', align: 'center', sortable: false },
+          { text: 'Доказательство', value: 'attributes.proof', align: 'center', sortable: false },
+          { text: 'Тип',
+            value: 'attributes.FPositive',
+            filter: value => {
+              if (this.valueType === 'все') return true
+              if (this.valueType === 'позитивный') return value === true
+              if (this.valueType === 'негативный') return value === false
+            },
+            align: 'center' },
+          { text: 'Создан',
+            value: 'attributes.createdAt',
+            filter: value => {
+              if (this.dates.length === 0) return true
+              if (this.dates.length === 1) return moment(value).format('YYYY-MM-DD') === this.dates[0]
+              if (this.dates.length === 2) {
+                this.dates.sort()
+                return moment(value).format('YYYY-MM-DD') >= this.dates[0] && moment(value).format('YYYY-MM-DD') <= this.dates[1]
+              }
+            },
+            align: 'center' },
+          { text: 'Действия', value: 'actions', align: 'center', sortable: false },
+        ]
+      },
+    },
     methods: {
-      ...mapActions(['retrieveIncidents', 'retrieveCriteria', 'retrieveAllUsers', 'retrieveLogs']),
+      ...mapActions([ 'retrieveCriteria', 'retrieveWorkers', 'retrieveIncidents', 'retrieveAllUsers', 'retrieveLogs']),
+      noModerateIncident(incident){
+        this.$store.dispatch('noModerateIncident', incident)
+          .then(() => {
+          })
+          .catch(error => {
+            console.log(error);
+          })
+      },
       moderateIncident(incident){
         this.$store.dispatch('moderateIncident', incident)
           .then(() => {
@@ -156,36 +331,33 @@
             console.log(error);
           })
       },
-      additionalInfo(incident) {
-        this.author = this.allUsers.find(author => author.id === incident.relationships.author.data.id).attributes.username;
-        this.target = this.allUsers.find(target => target.id === incident.relationships.target.data.id).attributes.username;
-        this.criterion = this.criteria.find(criterion => criterion.id === incident.relationships.criterion.data.id).attributes.name;
-        this.create = incident.attributes.createdAt;
-        this.description = incident.attributes.description;
-        this.proof = incident.attributes.proof;
-        this.dialog = true;
-        if (incident.attributes.FDelete){
-          this.delete = 'да'
-        } else {
-          this.delete = 'нет'
-        }
-        if (incident.attributes.FModer){
-          this.moder= 'да'
-        } else {
-          this.moder = 'нет'
-        }
-        if (incident.attributes.updateAt === null){
-          this.update= 'да'
-        } else {
-          this.update = 'нет'
-        }
-        this.retrieveLogs(incident.id);
+      openLogsDialog(incident) {
+        this.dialogLogs = true;
+        this.$refs.refDialogLogs.createDialog(incident);
+      },
+      openUpdateDescription(incident){
+        this.dialogDescription = true;
+        this.$refs.refDialogDescription.createDialog(incident);
+      },
+      openUpdateDialog(incident){
+        this.dialogUpdate = true;
+        this.$refs.refDialogUpdate.createDialog(incident);
+      },
+      closeDialog() {
+        this.dialogLogs = false;
+        this.dialogDescription = false;
+        this.dialogDelete = false;
+        this.dialogUpdate = false;
+      },
+      clickUrl(url) {
+        window.open(url);
       }
     },
     created() {
       this.retrieveIncidents();
       this.retrieveAllUsers();
       this.retrieveCriteria();
+      this.retrieveWorkers();
     }
   }
 </script>

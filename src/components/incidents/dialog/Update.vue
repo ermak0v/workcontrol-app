@@ -84,7 +84,7 @@
 </template>
 
 <script>
-  import {mapGetters} from "vuex";
+  import {mapGetters, mapActions} from "vuex";
 
   export default {
     name: "Update",
@@ -94,7 +94,7 @@
     data: () =>({
       urlRules: [
         v => !!v || 'Дайте ссылку на доказательство',
-        v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{2,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
+        v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{1,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
       ],
       idIncident: '',
       _idIncident: '',
@@ -106,8 +106,9 @@
       alertError: false,
       FEpic: false,
     }),
-    computed: mapGetters(['targetsIncidentsSent', 'criteria', 'workers']),
+    computed: mapGetters(['allUsers', 'criteria', 'workers']),
     methods: {
+      ...mapActions(['retrieveAllUsers']),
       slideCriteria(item){
         this.criterion = item
       },
@@ -116,6 +117,10 @@
       },
       saveDialog() {
         if (this.$refs.form.validate()){
+          let FModer;
+          if ((this.roleCurrentUser === 'ROLE_ADMIN') || (this.target.relationships.department.data.id === '/api/departments/' + this.departmentCurrentUser && this.roleCurrentUser === 'ROLE_HEAD')){
+            FModer = true;
+          }
           this.$store.dispatch('updateIncident',{
             id: this.idIncident,
             _id: this._idIncident,
@@ -125,6 +130,7 @@
             FPositive: (this.FPositive === 'true'),
             criterion: this.criterion.id,
             FEpic: this.FEpic,
+            FModer: FModer,
           })
             .then(() => {
               this.alertError = false;
@@ -145,7 +151,7 @@
           this.FPositive = 'false'
         }
         this.FEpic = incident.attributes.FEpic
-        this.target = this.targetsIncidentsSent.find(target => target.id === incident.relationships.target.data.id)
+        this.target = this.allUsers.find(target => target.id === incident.relationships.target.data.id)
         this.criterion = this.criteria.find(criterion => criterion.id === incident.relationships.criterion.data.id)
         this.idIncident = incident.id;
         this._idIncident = incident.attributes._id;

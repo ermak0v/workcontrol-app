@@ -37,6 +37,18 @@ export  default {
     deleteIncident(state, data) {
       state.sentIncidents.data = state.sentIncidents.data.filter(item => item.id !== data.id)
     },
+    noModerateIncident(state, data) {
+      state.sentIncidents.data.forEach(function(entry) {
+        if (entry.id === data.id) {
+          entry.attributes.FModer = false
+        }
+      });
+      state.allIncidents.data.forEach(function(entry) {
+        if (entry.id === data.id) {
+          entry.attributes.FModer = false
+        }
+      });
+    },
     moderateIncident(state, data) {
       state.sentIncidents.data.forEach(function(entry) {
         if (entry.id === data.id) {
@@ -63,6 +75,18 @@ export  default {
     }
   },
   actions: {
+    noModerateIncident({ commit }, data) {
+      return new Promise((resolve, reject) => {
+        api.noModeratePatchIncident(data)
+          .then(response => {
+            resolve(response)
+            commit('noModerateIncident', data);
+          })
+          .catch(error => {
+            reject(error)
+          })
+      })
+    },
     moderateIncident({ commit }, data) {
       return new Promise((resolve, reject) => {
         api.moderatePatchIncident(data)

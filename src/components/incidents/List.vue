@@ -2,50 +2,89 @@
   <v-container>
     <v-card>
       <v-card-title>
-        <tr>
-          Инциденты
-          <td>
-            <v-select
-                v-model="valueEpic"
-                :items="filter"
-                label="Важность"
-            ></v-select>
-          </td>
-          <td>
-            <v-select
-                v-model="valueModer"
-                :items="filter"
-                label="Модерация"
-            ></v-select>
-          </td>
-          <td>
-            <v-autocomplete
-                v-model="valueTarget"
-                :items="workers"
-                item-text="attributes.username"
-                label="Сотрудник"
-                return-object
-            ></v-autocomplete>
-          </td>
-          <td>
-            <v-autocomplete
-                v-model="valueCriterion"
-                :items="criteria"
-                item-text="attributes.name"
-                label="Критерий"
-                return-object
-            ></v-autocomplete>
-          </td>
-          <td colspan="2"></td>
-          <td>
-            <v-select
-                v-model="valueType"
-                :items="filterType"
-                label="Тип"
-            ></v-select>
-          </td>
-          <td colspan="2"></td>
-        </tr>
+        <v-row>
+          <v-col>
+            Список отправленных инцидентов
+            <v-row>
+              <v-col>
+                <v-select
+                    v-model="valueEpic"
+                    :items="filter"
+                    label="Важность"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-select
+                    v-model="valueModer"
+                    :items="filterModer"
+                    label="Модерация"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-autocomplete
+                    v-model="valueTarget"
+                    :items="workers"
+                    item-text="attributes.username"
+                    label="Сотрудник"
+                    return-object
+                ></v-autocomplete>
+              </v-col>
+              <v-col>
+                <v-autocomplete
+                    v-model="valueCriterion"
+                    :items="criteria"
+                    item-text="attributes.name"
+                    label="Критерий"
+                    return-object
+                ></v-autocomplete>
+              </v-col>
+              <v-col>
+                <v-select
+                    v-model="valueType"
+                    :items="filterType"
+                    label="Тип"
+                ></v-select>
+              </v-col>
+              <v-col>
+                <v-menu
+                    ref="menu"
+                    v-model="menu"
+                    :close-on-content-click="false"
+                    :return-value.sync="dates"
+                    transition="scale-transition"
+                    offset-y
+                    min-width="290px"
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                        v-model="dates"
+                        label="Дата"
+                        readonly
+                        v-bind="attrs"
+                        v-on="on"
+                    ></v-text-field>
+                  </template>
+                  <v-date-picker
+                      v-model="dates"
+                      no-title
+                      range
+                  >
+                    <v-spacer></v-spacer>
+                    <v-btn text color="primary" @click="menu = false">
+                      Отмена
+                    </v-btn>
+                    <v-btn text color="primary" @click="$refs.menu.save(dates = [])">
+                      Отчистить
+                    </v-btn>
+                    <v-btn text color="primary" @click="$refs.menu.save(dates)">
+                      Ок
+                    </v-btn>
+                  </v-date-picker>
+                </v-menu>
+              </v-col>
+            </v-row>
+          </v-col>
+        </v-row>
       </v-card-title>
       <v-data-table
           :headers="headers"
@@ -67,7 +106,10 @@
         </template>
 
         <template v-slot:item.attributes.FModer="{ item }">
-          <div v-if="item.attributes.FModer">Есть</div>
+          <div v-if="item.attributes.FModer !== null">
+            <div v-if="item.attributes.FModer">Есть</div>
+            <div v-else>Отклонено</div>
+          </div>
           <div v-else>Нет</div>
         </template>
 
@@ -106,10 +148,10 @@
         </template>
 
         <template v-slot:item.actions="{ item }">
-          <v-btn icon color="primary" @click="openUpdateDialog(item)">
+          <v-btn icon color="primary" :disabled="item.attributes.FModer !== null" @click="openUpdateDialog(item)">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
-          <v-btn icon color="error" @click="openDeleteDialog(item)">
+          <v-btn icon color="error"  :disabled="item.attributes.FModer !== null" @click="openDeleteDialog(item)">
             <v-icon>mdi-delete</v-icon>
           </v-btn>
         </template>
@@ -152,6 +194,7 @@
   import updateIncident from "./dialog/Update";
   import deleteIncident from "./dialog/Delete";
   import descriptionIncident from "./dialog/Description";
+  import moment from "moment"
 
   export default {
     name: "List",
@@ -161,6 +204,9 @@
       descriptionIncident
     },
     data: () =>({
+      dates: [],
+      menu: false,
+      modal: false,
       loading: false,
       dialogDelete: false,
       dialogDescription: false,
@@ -171,6 +217,7 @@
       valueEpic: 'все',
       filter: ['да', 'нет', 'все'],
       valueModer: 'все',
+      filterModer: ['есть', 'нет', 'отклонено', 'все'],
       filterType: ['позитивный', 'негативный', 'все'],
       valueType: 'все',
       valueTarget: '',
@@ -193,8 +240,9 @@
             value: 'attributes.FModer',
             filter: value => {
               if (this.valueModer === 'все') return true
-              if (this.valueModer === 'да') return value === true
-              if (this.valueModer === 'нет') return value === false
+              if (this.valueModer === 'есть') return value === true
+              if (this.valueModer === 'нет') return value === null
+              if (this.valueModer === 'отклонено') return value === false
             },
             align: 'center'
           },
@@ -224,13 +272,23 @@
               if (this.valueType === 'негативный') return value === false
             },
             align: 'center' },
-          { text: 'Создан', value: 'attributes.createdAt', align: 'center' },
+          { text: 'Создан',
+            value: 'attributes.createdAt',
+            filter: value => {
+              if (this.dates.length === 0) return true
+              if (this.dates.length === 1) return moment(value).format('YYYY-MM-DD') === this.dates[0]
+              if (this.dates.length === 2) {
+                this.dates.sort()
+                return moment(value).format('YYYY-MM-DD') >= this.dates[0] && moment(value).format('YYYY-MM-DD') <= this.dates[1]
+              }
+            },
+            align: 'center' },
           { text: 'Действия', value: 'actions', align: 'center', sortable: false },
         ]
       },
     },
     methods: {
-      ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers']),
+      ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers', 'retrieveAllUsers']),
       openUpdateDescription(incident){
         this.dialogDescription = true;
         this.$refs.refDialogDescription.createDialog(incident);
@@ -253,6 +311,7 @@
       }
     },
     created() {
+      this.retrieveAllUsers();
       this.retrieveSentIncidents();
       this.retrieveCriteria();
       this.retrieveWorkers();
