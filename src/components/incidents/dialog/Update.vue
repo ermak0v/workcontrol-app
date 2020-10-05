@@ -107,6 +107,12 @@
       FEpic: false,
     }),
     computed: mapGetters(['allUsers', 'criteria', 'workers']),
+    watch: {
+      alertError (val) {
+        if (!val) return
+        setTimeout(() => (this.alertError = false), 1000)
+      },
+    },
     methods: {
       ...mapActions(['retrieveAllUsers']),
       slideCriteria(item){

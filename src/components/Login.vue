@@ -5,9 +5,16 @@
       <v-spacer></v-spacer>
     </v-toolbar>
     <v-card-text>
-      <v-alert v-model="alertError" dense outlined type="error">
+      <v-alert
+          v-model="alert"
+          dismissible
+          dense
+          outlined
+          type="error"
+      >
         Неверная почта или пароль
       </v-alert>
+
       <v-form
           ref="form"
           v-model="valid"
@@ -34,9 +41,11 @@
     <v-card-actions>
       <v-spacer></v-spacer>
       <v-btn
+          width="150"
           color="primary"
+          :loading="loading"
           @click="login"
-          :disabled="!valid"
+          :disabled="!valid || alert"
       >Войти</v-btn>
     </v-card-actions>
   </v-card>
@@ -48,6 +57,8 @@
   export default {
     name: "Login",
     data: () => ({
+      alert: false,
+      loading: false,
       valid: true,
       email: "",
       emailRules: [
@@ -55,23 +66,25 @@
         v => /.+@.+\..+/.test(v) || 'Почта должна быть действительная',
       ],
       password: "",
-      alertError: false,
     }),
     methods: {
       ...mapActions(['retrieveToken']),
 
       login() {
         if (this.$refs.form.validate()){
+          this.loading = true;
           this.retrieveToken({
             email: this.email,
             password: this.password
           })
             .then(() => {
-              this.alertError = false;
+              this.loading = false;
+              this.alert = false;
               this.$router.push({name: 'create-incident'});
             })
             .catch(() => {
-              this.alertError = true;
+              this.alert = true;
+              this.loading = false;
             })
         }
       }

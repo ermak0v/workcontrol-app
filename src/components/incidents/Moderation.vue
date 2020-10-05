@@ -16,7 +16,7 @@
               <v-col>
                 <v-select
                     v-model="valueModer"
-                    :items="filter"
+                    :items="filterModer"
                     label="Модерация"
                 ></v-select>
               </v-col>
@@ -225,7 +225,6 @@
       dates: [],
       menu: false,
       modal: false,
-      loading: false,
       dialogLogs: false,
       dialogDelete: false,
       dialogDescription: false,
@@ -235,6 +234,7 @@
       itemsPerPage: 10,
       valueEpic: 'все',
       filter: ['да', 'нет', 'все'],
+      filterModer: ['есть', 'нет', 'отклонено', 'все'],
       valueModer: 'все',
       filterType: ['позитивный', 'негативный', 'все'],
       valueType: 'все',
@@ -244,6 +244,13 @@
     }),
     computed: {
       ...mapGetters(['allIncidents', 'allUsers', 'logs', 'targetsIncidentsSent', 'criteria', 'workers']),
+      loading() {
+        if (this.allIncidents === undefined) {
+          return true
+        } else {
+          return false
+        }
+      },
       headers () {
         return [
           { text: 'Важность',
@@ -259,8 +266,9 @@
             value: 'attributes.FModer',
             filter: value => {
               if (this.valueModer === 'все') return true
-              if (this.valueModer === 'да') return value === true
-              if (this.valueModer === 'нет') return value === false
+              if (this.valueModer === 'есть') return value === true
+              if (this.valueModer === 'нет') return value === null
+              if (this.valueModer === 'отклонено') return value === false
             },
             align: 'center'
           },

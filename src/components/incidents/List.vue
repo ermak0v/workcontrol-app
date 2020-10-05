@@ -207,7 +207,6 @@
       dates: [],
       menu: false,
       modal: false,
-      loading: false,
       dialogDelete: false,
       dialogDescription: false,
       dialogUpdate: false,
@@ -225,6 +224,13 @@
     }),
     computed: {
       ...mapGetters(['sentIncidents', 'targetsIncidentsSent', 'criteria', 'workers']),
+      loading() {
+        if (this.sentIncidents === undefined) {
+          return true
+        } else {
+          return false
+        }
+      },
       headers () {
         return [
           { text: 'Важность',

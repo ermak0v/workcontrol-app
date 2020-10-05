@@ -79,6 +79,7 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
+            :loading="loading"
             :disabled="!valid"
             color="primary"
             @click.stop="addIncident"
@@ -94,6 +95,7 @@
   export default {
     name: "Create",
     data: () => ({
+      loading: false,
       urlRules: [
         v => !!v || 'Дайте ссылку на доказательство',
         v => /^(https?:\/\/).[a-z0-9~_\-.]+\.[a-z]{1,9}(\/|:|\?[!-~]*)?.+/.test(v) || 'Ссылка должна быть действительная',
@@ -116,6 +118,16 @@
       alertSuccess: false
     }),
     computed:mapGetters(['lastTargets', 'criteria', 'workers', 'roleCurrentUser', 'departmentCurrentUser']),
+    watch: {
+      alertSuccess (val) {
+        if (!val) return
+        setTimeout(() => (this.alertSuccess = false), 1000)
+      },
+      alertError (val) {
+        if (!val) return
+        setTimeout(() => (this.alertError = false), 1000)
+      },
+    },
     methods: {
       ...mapActions(['retrieveSentIncidents', 'retrieveCriteria', 'retrieveWorkers']),
       slideLastTargets(item){
@@ -126,6 +138,7 @@
       },
       addIncident(){
         if (this.$refs.form.validate()){
+          this.loading = true;
           let FModer;
           if ((this.roleCurrentUser === 'ROLE_ADMIN') || (this.target.relationships.department.data.id === '/api/departments/' + this.departmentCurrentUser && this.roleCurrentUser === 'ROLE_HEAD')){
             FModer = true;
@@ -140,10 +153,12 @@
             FModer: FModer,
           })
             .then(() => {
+              this.loading = false;
               this.alertError = false;
               this.alertSuccess = true;
             })
             .catch(error => {
+              this.loading = false;
               this.alertSuccess = false;
               this.alertError = true;
               console.log(error);
