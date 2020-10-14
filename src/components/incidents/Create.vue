@@ -3,7 +3,7 @@
     <v-alert v-model="alertSuccess" dense outlined type="success">
       Инцидент добавлен
     </v-alert>
-    <v-alert v-model="alertError" dense outlined type="error">
+    <v-alert v-model="alertError" dismissible dense outlined type="error">
       Инцидент не добавлен
     </v-alert>
     <v-form
@@ -80,7 +80,7 @@
         <v-spacer></v-spacer>
         <v-btn
             :loading="loading"
-            :disabled="!valid"
+            :disabled="!valid || alertError"
             color="primary"
             @click.stop="addIncident"
         >Добавить</v-btn>

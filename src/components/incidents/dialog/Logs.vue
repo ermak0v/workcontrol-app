@@ -10,6 +10,7 @@
           hide-default-footer
           :single-expand="singleExpand"
           :expanded.sync="expanded"
+          :loading="loading"
           show-expand
           class="elevation-1"
       >
@@ -72,6 +73,13 @@
     }),
     computed: {
       ...mapGetters(['allIncidents', 'allUsers', 'criteria', 'logs']),
+      loading() {
+        if (this.logs === undefined) {
+          return true
+        } else {
+          return false
+        }
+      },
       headers () {
         return [
           { text: 'Сотрудник', value: 'relationships.creator.data.id'},
